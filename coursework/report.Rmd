@@ -11,6 +11,11 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## R Markdown
+@yeung_empirical_2001
+@hubert_comparing_1985
+@mukherjee_compressibility_2022
+@ding_k_2004
+@rand_objective_1971
 @chang_using_1983
 
 This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
