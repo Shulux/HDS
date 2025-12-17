@@ -7,7 +7,8 @@ library(sparsepca)
 library(fossil)
 
 # save all plots to a pdf file automatically
-pdf(file = "coursework/hds_plots.pdf", height=7, width=8)
+pdf(file = "coursework/figures/hds_plots.pdf", height=7, width=8)
+#png(file="coursework/figures/hds_plots_%d.png",type="cairo",width=1800,height=1600,res=200)
 
 set.seed(1)
 
@@ -92,8 +93,7 @@ summary(centered_sampledTumor)
 summary(centered_sampledTumor)
 sum_stats <- as.data.frame(apply(centered_sampledTumor, 2, summary))
 
-
-
+# visualisation of summary statistics through boxplots
 boxplot(Tumor[, sampleColsBig], main="Subset Gene Expression marginalised over patients (centered)", xlab="Gene", ylab="Gene Expression Value", las=2)
 
 boxplot(scale(Tumor, center=TRUE, scale=TRUE)[, sampleColsBig], main="Subset Gene Expression marginalised over patients (centered and scaled)", xlab="Gene", ylab="Gene Expression Value", las=2)
