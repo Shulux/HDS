@@ -7,8 +7,8 @@ library(sparsepca)
 library(fossil)
 
 # save all plots to a pdf file automatically
-pdf(file = "coursework/figures/hds_plots.pdf", height=7, width=8)
-#png(file="coursework/figures/hds_plots_%d.png",type="cairo",width=1800,height=1600,res=200)
+#pdf(file = "coursework/figures/hds_plots.pdf", height=7, width=8)
+png(file="coursework/figures/hds_plots_%d.png",type="cairo",width=1800,height=1600,res=200)
 
 set.seed(1)
 
@@ -34,6 +34,23 @@ row_names <- c("CNS", "CNS", "CNS", "RENAL", "BREAST", "CNS", "CNS", "BREAST", "
                "BREAST", "BREAST", "MELANOMA", "MELANOMA", "MELANOMA",
                "MELANOMA", "MELANOMA", "MELANOMA")
 
+labels <- factor(row_names)
+str(labels)
+table(labels)
+# the classes are not balanced, eg rarer tumor type example is "PROSTATE", a common type is "RENAL".
+
+library(ggplot2)
+
+barplot(prop.table(sort(table(labels), TRUE)), main="Tumor Label Distribution", xlab="Tumor Label", ylab="Proportion", las=2)
+
+labels_df <- data.frame(label = labels)
+
+ggplot(labels_df, aes(x = label)) +
+  geom_bar(fill = "steelblue") + # Adds bars, colors them
+  labs(title = "Tumor Label Frequency",
+       x = "Tumor Label", y = "Count")
+
+
 rownames(Tumor) <- make.names(row_names, unique=TRUE)
 
 ###### Data Exploration
@@ -41,6 +58,9 @@ rownames(Tumor) <- make.names(row_names, unique=TRUE)
 dim(Tumor) # n=64, p=6830
 ###### since the data is very high dimensional,
 ###### i am only looking at 10 randomly sampled dimensions to reduce output bloat
+
+sum(is.na(Tumor)) # no missing values
+
 
 sampleRows <- sample(1:dim(Tumor)[1], size=5, replace=FALSE)
 sampleCols <- sample(1:dim(Tumor)[2], size=10, replace=FALSE)
@@ -109,6 +129,8 @@ for(i in 1:6) {
   dens <- density(randCol)
   lines(dens)
 }
+par(mfrow = c(1, 1))
+
 # we can see that this subset of genes, seem to have unimodal distributions,
 # which are centered on zero as expected.
 
@@ -132,14 +154,50 @@ pheatmap::pheatmap(tumor_scaled, treeheight_row = 0, treeheight_col = 0)
 
 
 
+gene_var <- apply(Tumor, 2, var)
+summary(gene_var)
+hist(gene_var, breaks=50, main="Gene-wise variance distribution")
+abline(v = quantile(gene_var, 0.9), col="red", lwd=2)
 
-#K-means clustering
-#km.out <- kmeans(x=Tumor, centers=3, iter.max=100, nstart=1)
-#km.out
-#print(km.out$cluster)
-#summary(km.out)
 
-#plot(Tumor, col=km.out$cluster, main="K-means with 3 clusters", xlab="", ylab="")
+# many genes have very little variance and so are likely uninformative for clustering
+# only a few of the genes have higher and more substantial variances and so are potentially the most informative genes
+
+# this gives evidence to the idea that the signal is concentrated
+# in a low-dimensional subspace, with the genes that have high variance/information
+# most genes contribute mostly noise
+# a few genes contribute signal
+# supports the use of PCA and sparse PCA
+
+# including all the genes in clustering may dilute the distances as the dimension is increased.
+# as we know as p -> infinity, Euclidean distances diverge, so we want to lower p.
+
+dists <- dist(Tumor)
+summary(dists)
+hist(dists, breaks=50, main="Pairwise distances between samples")
+
+
+###### Basic clustering
+
+
+
+
+
+
+###### Basic clustering evaluation
+
+
+###### Basic dimensionality reduction
+
+
+###### Basic dimensionality reduction evaluation
+
+
+###### Clustering after dim reduction
+
+
+###### Clustering after dim reduction evaluation
+
 
 
 # end saving plots to pdf

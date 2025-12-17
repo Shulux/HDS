@@ -4,11 +4,11 @@ subtitle: "Does dimensionality reduction improve clustering performance in high-
 author: "qvns53@durham.ac.uk, Durham University"
 date: "`r Sys.Date()`"
 output:
+  pdf_document:
+    number_sections: true
   html_document:
     number_sections: true
     df_print: paged
-  pdf_document:
-    number_sections: true
 bibliography: hds_references.bib
 csl: ieee.csl
 ---
@@ -51,12 +51,3 @@ knitr::opts_chunk$set(echo = TRUE)
 <div id="refs"></div>
 
 # Appendix
-
-```{r cars}
-summary(cars)
-```
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
