@@ -1,29 +1,24 @@
 ---
 title: "High Dimensional Statistics IV MATH4287 - Mini Project Report"
-author: "qvns53"
+subtitle: "Does dimensionality reduction improve clustering performance in high-dimensional gene expression data?"
+author: "qvns53@durham.ac.uk, Durham University"
 date: "`r Sys.Date()`"
 output:
-  pdf_document: default
+  pdf_document:
+    number_sections: true
   html_document:
+    number_sections: true
     df_print: paged
 bibliography: hds_references.bib
+csl: ieee.csl
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Introduction
+# Introduction
 
-## Objectives & Questions
-
-## Literature Review
-
-## Methods
-
-## Results
-
-## Conclusion
 @yeung_empirical_2001
 @hubert_comparing_1985
 @mukherjee_compressibility_2022
@@ -31,7 +26,21 @@ knitr::opts_chunk$set(echo = TRUE)
 @rand_objective_1971
 @chang_using_1983
 
+# Objectives & Questions
 
+# Literature Review
+
+# Methods
+
+# Results & Findings
+
+# Conclusion
+
+# References
+
+<div id="refs"></div>
+
+# Appendix
 
 ```{r cars}
 summary(cars)
