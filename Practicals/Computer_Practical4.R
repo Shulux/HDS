@@ -11,7 +11,7 @@ library(fossil)
 set.seed(1)
 
 #Load human tumor microarray data
-data <- read.csv("Human_Tumor_Microarray.csv",header=TRUE)
+data <- read.csv("Practicals/Human_Tumor_Microarray.csv",header=TRUE)
 Tumor <- data[,-1]
 Tumor <- t(Tumor)#to make it as an nxp data matrix with p variables in columns
 
@@ -20,14 +20,14 @@ Tumor <- as.data.frame(Tumor)
 #from the file of labels available on Ultra
 row_names <- c("CNS", "CNS", "CNS", "RENAL", "BREAST", "CNS", "CNS", "BREAST", "NSCLC",
                       "NSCLC", "RENAL", "RENAL", "RENAL", "RENAL", "RENAL", "RENAL", "RENAL",
-                      "BREAST", "NSCLC", "RENAL", "UNKNOWN", "OVARIAN", "MELANOMA", 
-                      "PROSTATE", "OVARIAN", "OVARIAN", "OVARIAN", "OVARIAN", 
-                      "OVARIAN", "PROSTATE", "NSCLC", "NSCLC", "NSCLC", "LEUKEMIA", 
-                      "K562A-repro", "K562A-repro", "LEUKEMIA", "LEUKEMIA", 
+                      "BREAST", "NSCLC", "RENAL", "UNKNOWN", "OVARIAN", "MELANOMA",
+                      "PROSTATE", "OVARIAN", "OVARIAN", "OVARIAN", "OVARIAN",
+                      "OVARIAN", "PROSTATE", "NSCLC", "NSCLC", "NSCLC", "LEUKEMIA",
+                      "K562A-repro", "K562A-repro", "LEUKEMIA", "LEUKEMIA",
                       "LEUKEMIA", "LEUKEMIA", "LEUKEMIA", "COLON", "COLON", "COLON",
-                      "COLON", "COLON", "COLON", "COLON", "K562A-repro", "BREAST", 
-                      "K562A-repro", "BREAST", "NSCLC", "NSCLC", "NSCLC", "MELANOMA", 
-                      "BREAST", "BREAST", "MELANOMA", "MELANOMA", "MELANOMA", 
+                      "COLON", "COLON", "COLON", "COLON", "K562A-repro", "BREAST",
+                      "K562A-repro", "BREAST", "NSCLC", "NSCLC", "NSCLC", "MELANOMA",
+                      "BREAST", "BREAST", "MELANOMA", "MELANOMA", "MELANOMA",
                       "MELANOMA", "MELANOMA", "MELANOMA")
 
 rownames(Tumor) <- make.names(row_names, unique=TRUE)
@@ -62,12 +62,12 @@ for (i in 1:10) {
   km.out <- kmeans(x=Tumor, centers=i, iter.max=100, nstart=20)
   # Save total within sum of squares to wss variable
   wss[i] <- km.out$tot.withinss
-  
+
 }
 
 # Plot total within sum of squares vs. number of clusters
-plot(1:10, wss, type = "b", 
-     xlab = "Number of clusters", 
+plot(1:10, wss, type = "b",
+     xlab = "Number of clusters",
      ylab = "Sum of squares")
 
 k <- 3
@@ -92,7 +92,7 @@ plot(hc.out2, main="Average")
 #hierarchical clustering using dimensionality reduction via PCA
 pr.out <- prcomp(x=Tumor, center=FALSE, scale=FALSE)
 summary(pr.out)
-proj.data <- pr.out$x[,1:42] #The first 42 leading PCs 
+proj.data <- pr.out$x[,1:42] #The first 42 leading PCs
 proj.data <- Tumor%*%pr.out$rotation[,1:42]
 hc.out4 <- hclust(dist(proj.data), method="average")
 plot(hc.out4, main="Average")
@@ -104,9 +104,9 @@ proj.data <- Tumor%*%pr.out$rotation[,1:42]
 km.out.pca <- kmeans(x=proj.data, centers=3, iter.max=100, nstart=20)
 
 #Sparse PCA
-spca.out <- spca(Tumor,k=20,alpha=1e-3,beta=1e-3,center=TRUE,scale=FALSE,verbose=0) 
-print(spca.out$loadings) 
-View(spca.out$loadings) 
+spca.out <- spca(Tumor,k=20,alpha=1e-3,beta=1e-3,center=TRUE,scale=FALSE,verbose=0)
+print(spca.out$loadings)
+View(spca.out$loadings)
 summary(spca.out)
 
 #library(elasticnet)
@@ -154,12 +154,12 @@ for (i in 1:10) {
   km.out <- kmeans(x=SP500data, centers=i, iter.max=100, nstart=20)
   # Save total within sum of squares to wss variable
   wss[i] <- km.out$tot.withinss
-  
+
 }
 
 # Plot total within sum of squares vs. number of clusters
-plot(1:10, wss, type = "b", 
-     xlab = "Number of clusters", 
+plot(1:10, wss, type = "b",
+     xlab = "Number of clusters",
      ylab = "Sum of squares")
 
 k <- 3
