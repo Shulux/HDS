@@ -7,8 +7,8 @@ library(sparsepca)
 library(fossil)
 
 # save all plots to a pdf file automatically
-#pdf(file = "coursework/figures/hds_plots.pdf", height=7, width=8)
-png(file="coursework/figures/hds_plots_%d.png",type="cairo",width=1800,height=1600,res=200)
+pdf(file = "coursework/figures/hds_plots.pdf", height=7, width=8)
+#png(file="coursework/figures/hds_plots_%d.png",type="cairo",width=1800,height=1600,res=200)
 
 set.seed(1)
 
@@ -34,21 +34,22 @@ row_names <- c("CNS", "CNS", "CNS", "RENAL", "BREAST", "CNS", "CNS", "BREAST", "
                "BREAST", "BREAST", "MELANOMA", "MELANOMA", "MELANOMA",
                "MELANOMA", "MELANOMA", "MELANOMA")
 
-labels <- factor(row_names)
+labels <- factor(row_names, levels = names(sort(table(row_names), TRUE)))
 str(labels)
 table(labels)
 # the classes are not balanced, eg rarer tumor type example is "PROSTATE", a common type is "RENAL".
 
 library(ggplot2)
 
-barplot(prop.table(sort(table(labels), TRUE)), main="Tumor Label Distribution", xlab="Tumor Label", ylab="Proportion", las=2)
+#barplot(prop.table(table(labels)), main="Tumor Label Distribution", xlab="Tumor Label", ylab="Proportion", las=2)
 
-labels_df <- data.frame(label = labels)
+labels_df <- data.frame(labels)
 
-ggplot(labels_df, aes(x = label)) +
+ggplot(labels_df, aes(x = labels)) +
   geom_bar(fill = "steelblue") + # Adds bars, colors them
-  labs(title = "Tumor Label Frequency",
-       x = "Tumor Label", y = "Count")
+  scale_y_continuous(labels = function(x) paste0(round(x/64*100,2), "%"), breaks = seq(0, 9, 1)) +
+  labs(title = "Tumor Label Distribution",
+       x = "Tumor Label", y = "Proportion")
 
 
 rownames(Tumor) <- make.names(row_names, unique=TRUE)
@@ -169,19 +170,36 @@ abline(v = quantile(gene_var, 0.9), col="red", lwd=2)
 # a few genes contribute signal
 # supports the use of PCA and sparse PCA
 
+
+###### Basic clustering
+
+X <- as.matrix(Tumor)          # centered, unscaled, full data
+labels # previously defined
+K_true <- length(unique(labels)) # we have 11 unique label classes (clusters)
+
+
+n <- nrow(X) #64
+p <- ncol(X) #6830
+
+
 # including all the genes in clustering may dilute the distances as the dimension is increased.
 # as we know as p -> infinity, Euclidean distances diverge, so we want to lower p.
 
 dists <- dist(Tumor)
 summary(dists)
-hist(dists, breaks=50, main="Pairwise distances between samples")
+hist(dists, breaks=50, main="Pairwise distances between samples", xlab="Euclidean distance")
+
+### K-Means
 
 
-###### Basic clustering
+### Hierarchical
+## Average linkage
 
+## simple linkage
 
+## complete linkage
 
-
+### K-Medians
 
 
 ###### Basic clustering evaluation
