@@ -7,8 +7,8 @@ library(sparsepca)
 library(fossil)
 
 # save all plots to a pdf file automatically
-#pdf(file = "coursework/figures/hds_plots.pdf", height=7, width=8)
-png(file="coursework/figures/hds_plots_%d.png",type="cairo",width=1800,height=1600,res=200)
+pdf(file = "coursework/figures/hds_plots.pdf", height=7, width=8)
+#png(file="coursework/figures/hds_plots_%d.png",type="cairo",width=1800,height=1600,res=200)
 
 set.seed(1)
 
@@ -177,6 +177,9 @@ X <- as.matrix(Tumor)          # centered, unscaled, full data
 labels <- factor(row_names) # previously defined, but now without sorting
 K_true <- length(unique(labels)) # we have 11 unique label classes (clusters)
 
+# fossil-compatible label vector (integer cluster IDs)
+labels_id <- as.integer(labels)
+
 
 n <- nrow(X) #64
 p <- ncol(X) #6830
@@ -198,7 +201,7 @@ ari_vals <- numeric(k_max)
 for (k in 1:k_max) {
   km <- kmeans(X, centers = k, iter.max=100, nstart = 20)
   wss[k] <- km$tot.withinss
-  ari_vals[k] <- adj.rand.index(km$cluster, labels)
+  ari_vals[k] <- adj.rand.index(km$cluster, labels_id)
 }
 
 plot(1:k_max, wss, type = "b",
@@ -208,11 +211,11 @@ plot(1:k_max, wss, type = "b",
      xaxt = 'n')
 axis(1, at=c(1:k_max))
 
-#plot(2:k_max, ari_vals[2:k_max], type = "b",
-#     xlab = "Number of clusters (k)",
-#     ylab = "Adjusted Rand Index",
-#     main = "ARI vs k clusters")
-#axis(1, at=c(2:k_max))
+plot(2:k_max, ari_vals[2:k_max], type = "b",
+     xlab = "Number of clusters (k)",
+     ylab = "Adjusted Rand Index",
+     main = "ARI vs k clusters")
+axis(1, at=c(2:k_max))
 
 # chosen to be k=6, but honestly the elbow/scree plot does not show a clear value to choose for k.
 # went further by using the adjust rand index values plot, this helped the decision for optimal k.
@@ -224,7 +227,7 @@ km_raw <- kmeans(X, centers = k_chosen, nstart = 50)
 clusters_km <- km_raw$cluster
 
 # evaluating k means clustering with adjusted rand index
-ari_km_raw <- adj.rand.index(clusters_km, labels)
+ari_km_raw <- adj.rand.index(clusters_km, labels_id)
 ari_km_raw
 
 
@@ -271,15 +274,16 @@ clusters_hcA <- cutree(hc.outA, k = k_chosen)
 clusters_hcS <- cutree(hc.outS, k = k_chosen)
 clusters_hcC <- cutree(hc.outC, k = k_chosen)
 
-ari_hcA_raw <- adj.rand.index(clusters_hcA, labels)
+ari_hcA_raw <- adj.rand.index(clusters_hcA, labels_id)
 ari_hcA_raw
 
-ari_hcS_raw <- adj.rand.index(clusters_hcS, labels)
+ari_hcS_raw <- adj.rand.index(clusters_hcS, labels_id)
 ari_hcS_raw
 
-ari_hcC_raw <- adj.rand.index(clusters_hcC, labels)
+ari_hcC_raw <- adj.rand.index(clusters_hcC, labels_id)
 ari_hcC_raw
 
+round(c(ari_hcA_raw, ari_hcS_raw, ari_hcC_raw),5)
 
 ### K-Medians
 
