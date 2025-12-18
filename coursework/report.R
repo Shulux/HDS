@@ -191,6 +191,18 @@ hist(dists, breaks=50, main="Pairwise distances between samples", xlab="Euclidea
 
 ### K-Means
 
+wss <- numeric(10)
+
+for (k in 1:15) {
+  km <- kmeans(X, centers = k, iter.max=100, nstart = 20)
+  wss[k] <- km$tot.withinss
+}
+
+plot(1:15, wss, type = "b",
+     xlab = "Number of clusters (k)",
+     ylab = "Total within-cluster sum of squares",
+     main = "Elbow plot for k-means clustering")
+
 
 ### Hierarchical
 ## Average linkage

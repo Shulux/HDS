@@ -52,6 +52,8 @@ for(i in 1:6) {
   # Plot clusters
   plot(x=Tumor, col=km.out$cluster, main=km.out$tot.withinss)
 }
+par(mfrow = c(1, 1))
+
 
 #Selecting an optimal number of clusters
 # Initialize total within sum of squares error (wss)
