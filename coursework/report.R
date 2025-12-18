@@ -7,8 +7,8 @@ library(sparsepca)
 library(fossil)
 
 # save all plots to a pdf file automatically
-pdf(file = "coursework/figures/hds_plots.pdf", height=7, width=8)
-#png(file="coursework/figures/hds_plots_%d.png",type="cairo",width=1800,height=1600,res=200)
+#pdf(file = "coursework/figures/hds_plots.pdf", height=7, width=8)
+png(file="coursework/figures/hds_plots_%d.png",type="cairo",width=1800,height=1600,res=200)
 
 set.seed(1)
 
@@ -174,7 +174,7 @@ abline(v = quantile(gene_var, 0.9), col="red", lwd=2)
 ###### Basic clustering
 
 X <- as.matrix(Tumor)          # centered, unscaled, full data
-labels # previously defined
+labels <- factor(row_names) # previously defined, but now without sorting
 K_true <- length(unique(labels)) # we have 11 unique label classes (clusters)
 
 
@@ -185,31 +185,101 @@ p <- ncol(X) #6830
 # including all the genes in clustering may dilute the distances as the dimension is increased.
 # as we know as p -> infinity, Euclidean distances diverge, so we want to lower p.
 
-dists <- dist(Tumor)
+dists <- dist(X)
 summary(dists)
 hist(dists, breaks=50, main="Pairwise distances between samples", xlab="Euclidean distance")
 
 ### K-Means
 
-wss <- numeric(10)
+k_max <- 15
+wss <- numeric(k_max)
+ari_vals <- numeric(k_max)
 
-for (k in 1:15) {
+for (k in 1:k_max) {
   km <- kmeans(X, centers = k, iter.max=100, nstart = 20)
   wss[k] <- km$tot.withinss
+  ari_vals[k] <- adj.rand.index(km$cluster, labels)
 }
 
-plot(1:15, wss, type = "b",
+plot(1:k_max, wss, type = "b",
      xlab = "Number of clusters (k)",
      ylab = "Total within-cluster sum of squares",
-     main = "Elbow plot for k-means clustering")
+     main = "Elbow plot for k-means clustering",
+     xaxt = 'n')
+axis(1, at=c(1:k_max))
+
+#plot(2:k_max, ari_vals[2:k_max], type = "b",
+#     xlab = "Number of clusters (k)",
+#     ylab = "Adjusted Rand Index",
+#     main = "ARI vs k clusters")
+#axis(1, at=c(2:k_max))
+
+# chosen to be k=6, but honestly the elbow/scree plot does not show a clear value to choose for k.
+# went further by using the adjust rand index values plot, this helped the decision for optimal k.
+k_chosen <- 6
+
+set.seed(1)
+km_raw <- kmeans(X, centers = k_chosen, nstart = 50)
+
+clusters_km <- km_raw$cluster
+
+# evaluating k means clustering with adjusted rand index
+ari_km_raw <- adj.rand.index(clusters_km, labels)
+ari_km_raw
 
 
-### Hierarchical
+
+# 2D g1533 g4567 plot of k means clustering
+plot(X[, sampleCols[1:2]],
+     col = clusters_km,
+     pch = 19,
+     main = paste("k-means clusters with", k_chosen, "clusters (using 2 randomly sampled genes)"),
+     xlab = paste0("g", sampleCols[1]), ylab = paste0("g", sampleCols[2]))
+legend("topright",
+       legend = paste("Cluster", 1:k_chosen),
+       col = 1:k_chosen,
+       pch = 19,
+       cex = 0.8)
+
+#using PCA (first 2 PCs) to get a visualisation, not for dim reduction purposes yet.
+plot(prcomp(X)$x[,1:2],
+     col = clusters_km,
+     pch = 19,
+     main = "K-means clusters (first 2 PCs, raw clustering)")
+legend("topright",
+       legend = paste("Cluster", 1:k_chosen),
+       col = 1:k_chosen,
+       pch = 19,
+       cex = 0.8)
+
+
+### Hierarchical clustering
+
 ## Average linkage
-
+hc.outA <- hclust(dist(X), method="average")
 ## simple linkage
-
+hc.outS <- hclust(dist(X), method="single")
 ## complete linkage
+hc.outC <- hclust(dist(X), method="complete")
+
+# Plot dendrograms of Clustering
+plot(hc.outA, main="Average")
+plot(hc.outS, main="Single")
+plot(hc.outC, main="Complete")
+
+clusters_hcA <- cutree(hc.outA, k = k_chosen)
+clusters_hcS <- cutree(hc.outS, k = k_chosen)
+clusters_hcC <- cutree(hc.outC, k = k_chosen)
+
+ari_hcA_raw <- adj.rand.index(clusters_hcA, labels)
+ari_hcA_raw
+
+ari_hcS_raw <- adj.rand.index(clusters_hcS, labels)
+ari_hcS_raw
+
+ari_hcC_raw <- adj.rand.index(clusters_hcC, labels)
+ari_hcC_raw
+
 
 ### K-Medians
 
