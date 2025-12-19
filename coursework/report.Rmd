@@ -18,40 +18,25 @@ knitr::opts_chunk$set(echo = FALSE)
 knitr::opts_chunk$set(fig.show = 'hold')
 ```
 
-Test
-
 # Introduction
 
-Modern biological datasets often exhibit a “large p, small n” structure, where the number of measured variables far exceeds the number of observations, this is known as high-dimensional data. A canonical example is microarray gene expression data, where thousands of genes are measured across a limited number of samples. In such settings, classical clustering methods based on Euclidean distances are known to perform poorly due to the curse of dimensionality.
+High-dimensional biological datasets pose substantial challenges for classical clustering methods. In particular, gene expression microarray data typically exhibit a $p>>n$ structure, where the number of measured variables far exceeds the number of available observations. In such settings, Euclidean distances tend to concentrate, reducing their discriminative power and potentially degrading the performance of distance-based clustering algorithms.
 
-A common strategy for addressing these issues is to apply dimensionality reduction prior to clustering. Principal Component Analysis (PCA) is frequently used to project the data onto a lower-dimensional subspace that preserves maximal variance, after which standard clustering methods may be applied.
+A common strategy for addressing these issues is to apply dimensionality reduction prior to clustering. Principal Component Analysis (PCA) is frequently used to project the data onto a lower-dimensional subspace that captures most of the total variance. However, directions of maximal variance do not necessarily correspond to directions that best separate clusters, and dimensionality reduction may therefore fail to improve clustering performance.
 
-However, it has been noted that directions of maximal variance do not necessarily correspond to directions that separate clusters. As a result, dimensionality reduction may fail to improve, or may even degrade, clustering performance depending on the data structure.
-
-This mini-project investigates whether dimensionality reduction improves clustering performance on a real high-dimensional dataset. In particular, we study k-means and hierarchical clustering applied to the Human Tumor Microarray dataset (available in the practical material from this course), comparing clustering results obtained on the raw data, PCA-reduced data, and sparse PCA-reduced data.
-
-
-@yeung_empirical_2001
-@hubert_comparing_1985
-@mukherjee_compressibility_2022
-@ding_k_2004
-@rand_objective_1971
-@chang_using_1983
+This mini-project investigates whether dimensionality reduction improves clustering performance on a real high-dimensional dataset: the Human Tumor Microarray dataset. We compare clustering results obtained using raw data, PCA-reduced data, and sparse PCA-reduced data, focusing on both clustering accuracy and interpretability.
 
 # Objectives & Questions
 
 The objectives of this project are:
 
-- To evaluate whether dimensionality reduction improves clustering performance in a
-  high-dimensional, low-sample-size setting.
+- To evaluate whether dimensionality reduction improves clustering performance in a high-dimensional, low-sample-size setting.
 - To compare standard PCA and sparse PCA as preprocessing steps for clustering.
-- To assess the impact of dimensionality reduction on both clustering accuracy and
-  interpretability.
+- To assess the effect of dimensionality reduction on different clustering algorithms, focusing the evaluation on objective metrics as well as interpretability.
 
 The primary research question is:
 
-- Does dimensionality reduction improve clustering performance, as measured by the
-  Adjusted Rand Index, on the Human Tumor Microarray dataset?
+- Does dimensionality reduction improve clustering performance, as measured by the Adjusted Rand Index, on the Human Tumor Microarray dataset?
 
 Secondary questions include:
 
@@ -61,81 +46,111 @@ Secondary questions include:
 
 # Literature Review
 
-In high dimensions, Euclidean distances tend to concentrate, reducing their discriminative power. As discussed in the lecture notes, this phenomenon undermines distance-based clustering methods such as k-means and hierarchical clustering.
+This report references various literature sources @yeung_empirical_2001, @hubert_comparing_1985, @mukherjee_compressibility_2022, @ding_k_2004, @rand_objective_1971, @chang_using_1983, as well as the course materials.
 
-Although PCA is often applied prior to clustering, theoretical and empirical results suggest that high-variance directions may not align with cluster-separating directions.
 
-Sparse PCA extends classical PCA by imposing sparsity on the loading vectors, improving interpretability by identifying a small subset of influential variables. While sparse PCA can enhance interpretability, its effect on clustering performance is less clear.
 
 # Methods
 
-## Dataset & Exploratory Analysis
+## Dataset Description & Exploratory Analysis
 
-The Human Tumor Microarray dataset consists of n = 64 samples with p = 6830 gene expression measurements. True tumor labels are available and are used only for external evaluation of clustering results.
+The Human Tumor Microarray dataset consists of gene expression measurements for $n=64$ tumour samples across $p=6830$ genes. Each sample is associated with a known tumour type label, which is used only for external evaluation of clustering performance. The class distribution is imbalanced, with some tumour types appearing much more frequently than others (see the left figure below). Note the 'PROSTATE' and 'UNKNOWN' classes are the least common, so they would likely be absorbed by the more frequent classes during the running of a clustering algorithm.
+
+```{r, echo=FALSE, out.width = '50%'}
+knitr::include_graphics("C:/Usersnicsa/Documents/Durham University/Year 4/MATH4287 High Dimensional Stats/HDS/coursework/figures/hds_plots_1.png")
+knitr::include_graphics("C:/Usersnicsa/Documents/Durham University/Year 4/MATH4287 High Dimensional Stats/HDS/coursework/figures/hds_plots_8.png")
+```
+
+All gene expression variables were centred by subtracting their sample means, as this is standard practice. Scaling was not applied, as the analysis focuses on variance structure and relative differences between samples.
+
+Exploratory analysis revealed that many genes exhibit very low variance across samples, while a small subset shows substantially higher variability (see the right figure above). This suggests that much of the signal may lie in a lower-dimensional subspace, motivating the use of PCA and sparse PCA.
 
 
-## Clustering without Dimensionality Reduction
+## Clustering Algorithms
 
-The number of clusters was fixed at k = 5 across all experiments to allow fair comparison
-between methods.
+Two clustering approaches were considered:
+
+- k-means clustering, using Euclidean distance.
+  - $d(X_i, X_j) = ||X_i - X_j||^2_2 = \sum^p_{l=1}{\left(X_il-X_jl\right)^2}$
+- Hierarchical (agglomerative) clustering, with single, average, and complete linkage.
+  - single: $d_{SL}(G, H) = min_{i \in G, i^{\star} \in H} d_{i i^{\star}}$
+  - complete: $d_{CL}(G, H) = max_{i \in G, i^{\star} \in H} d_{i i^{\star}}$
+  - group average: $d_{GA}(G, H) = \frac{1}{N_G N_H} \sum_{i\in G} \sum_{i^{\star} \in H} d_{i i^{\star}}$
+
+To allow fair comparison across methods and dimensionality reductions, the number of clusters was fixed at $k=5$. This choice was guided by elbow plots and Adjusted Rand Index (ARI) values obtained from k-means clustering on the raw data. See Section "5.1 Choosing the k value' for more details on this.
 
 
 ## Dimensionality Reduction
 
-Rather than fixing the number of principal components directly, variance-explained
-thresholds were used to determine the reduced dimension.
+PCA was applied to the centred data using singular value decomposition. Typically the number of principal components is chosen to pick a 'cut-off' at a component that has significantly more variance than the one immediately after. This is practically done by using a scree plot visualisation and applying the 'elbow method'. An alternative to that visual method is to use the cumulative proportion of variance explained. Thresholds of 75%, 90%, and 95% variance explained were considered, corresponding to substantial reductions in dimensionality.
 
-Sparse PCA was implemented using the spca function, which imposes an L1 penalty on the
-loading vectors, encouraging sparse gene selection.
-
+Sparse PCA was also applied, imposing sparsity on the loading vectors to encourage selection of a small subset of genes contributing to each component. This approach aims to improve interpretability while retaining the main variance structure.
 
 ## Evaluation Metrics
 
-Clustering performance was evaluated using the Adjusted Rand Index (ARI), which measures
-agreement between the clustering assignment and the true labels while correcting for
-chance.
+To evaluate clustering methods, one can try to visualise the clusters and check for cluster separation across pairs of dimensions. That method is clearly visual and therefore subjective, but it can still be very useful if you pick a new pair of dimensions that are likely to lead to good performance. To do this, one can use PCA again, (completely separately to using it to reduce dimensionality before clustering) as a visualisation aid; then plot the clusters along the first 2 principal components and check for separation.
+
+Clustering performance was further evaluated using the Adjusted Rand Index (ARI), which measures agreement between the clustering assignment and the true tumour labels while correcting for chance.
 
 
 # Results & Findings
+## Choosing the k value
+
+To pick the optimal $k$ number of clusters to use throughout the whole analysis, we used a scree plot of number of clusters ($k$) against the within-cluster sum of squares (WSS). To pick a suitable $k$, one should find the "elbow" of this plot, but as is visible on the plot, there is not a clear value of k for this data.
+
+As an alternative, we used the ARI plotted against $k$, and looked for peaks. The most optimal choice from these plots is $k=5$ which was used for all methods.
+
+```{r, echo=FALSE, out.width = '40%', fig.align='center'}
+knitr::include_graphics("C:/Usersnicsa/Documents/Durham University/Year 4/MATH4287 High Dimensional Stats/HDS/coursework/figures/hds_plots_67.png")
+knitr::include_graphics("C:/Usersnicsa/Documents/Durham University/Year 4/MATH4287 High Dimensional Stats/HDS/coursework/figures/hds_plots_68.png")
+```
+
 
 ## Baseline clustering
 
-Applying k-means directly to the raw high-dimensional data yielded an ARI of approximately
-0.66, which was the highest performance observed across all methods.
+Applying k-means clustering directly to the full high-dimensional dataset yielded an ARI of approximately 0.66, which was the highest observed across all methods considered. Hierarchical clustering performed less well overall, with complete linkage outperforming single and average linkage.
+
+Despite the high dimensionality, clustering on the raw data retained meaningful structure, suggesting that the signal is not completely overwhelmed by noise.
+
+```{r, echo=FALSE, out.width = '60%', fig.align='center'}
+knitr::include_graphics("C:/Usersnicsa/Documents/Durham University/Year 4/MATH4287 High Dimensional Stats/HDS/coursework/figures/hds_plots_13.png")
+```
 
 ## PCA-based clustering
 
-Applying PCA with 90% or 95% variance retention did not meaningfully change clustering
-performance relative to the raw data.
+The cumulative variance explained by PCA is shown below. Approximately 90% of the total variance is captured by the first 42 principal components, representing a substantial reduction from the original 6830-dimensional space.
 
-At the 75% variance threshold, the preferred clustering structure changed, but no
-improvement in ARI was observed.
+However, applying k-means clustering to PCA-reduced data with 90% or 95% variance retained produced clustering results identical to those obtained on the raw data for $k=5$, yielding the same ARI. When only 75% of the variance was retained, the clustering structure changed, but no improvement in ARI was observed.
+
+The right figure of Section 5.1 shows ARI as a function of the number of clusters for raw data, PCA-reduced data, and sparse PCA. Across most values of $k$, dimensionality reduction did not improve clustering accuracy.
+
+
+```{r, echo=FALSE, out.width = '58%', fig.align='center'}
+knitr::include_graphics("C:/Usersnicsa/Documents/Durham University/Year 4/MATH4287 High Dimensional Stats/HDS/coursework/figures/hds_plots_23.png")
+```
+
 
 ## Sparse-PCA based clustering
 
-Sparse PCA did not improve k-means clustering performance as measured by ARI.
+Sparse PCA produced clustering results similar to those obtained using standard PCA, with no improvement in ARI for k-means clustering. However, sparse PCA yielded loading vectors involving a small subset of genes, facilitating interpretation of the principal components.
 
-However, sparse PCA produced loading vectors involving substantially fewer genes,
-facilitating interpretation of the dominant components.
+An analysis of sparse PCA loadings revealed that certain genes appeared repeatedly across the first few components, suggesting potential biological relevance. This interpretability advantage distinguishes sparse PCA from standard PCA, despite similar clustering performance.
 
-## Hierarchical clustering
+The most impactful genes are shown in the figure below.
 
-The impact of dimensionality reduction on hierarchical clustering depended on the choice
-of linkage method, with sparse PCA affecting average and complete linkage differently.
-
+```{r, echo=FALSE, out.width = '58%', fig.align='center'}
+knitr::include_graphics("C:/Usersnicsa/Documents/Durham University/Year 4/MATH4287 High Dimensional Stats/HDS/coursework/figures/hds_plots_69.png")
+```
 
 # Conclusions
 
-- Dimensionality reduction did not improve clustering performance on the Human Tumor
-  Microarray dataset.
-- Raw k-means clustering achieved the highest Adjusted Rand Index.
-- PCA preserved clustering structure but did not enhance it, even at aggressive variance
-  thresholds.
-- Sparse PCA improved interpretability by identifying a small subset of genes but did not
-  improve clustering accuracy.
-- The effectiveness of dimensionality reduction for clustering is highly data-dependent
-  and cannot be assumed a priori.
+- Clustering on the raw high-dimensional data achieved the highest Adjusted Rand Index.
+- PCA-based dimensionality reduction did not improve clustering performance, even with substantial reductions in dimensionality.
+- Aggressive dimensionality reduction (75% variance) altered clustering structure but did not enhance accuracy.
+- Sparse PCA did not improve clustering accuracy but provided improved interpretability through sparse gene loadings.
+- These results highlight that dimensionality reduction does not necessarily improve clustering performance in high-dimensional biological data.
 
+Please see https://github.com/Shulux/HDS/tree/main for the full code used to produce the plots in this report.
 
 # References
 
@@ -145,20 +160,11 @@ of linkage method, with sparse PCA affecting average and complete linkage differ
 
 
 ```{r, echo=FALSE, out.width = '50%'}
-knitr::include_graphics("C:/Usersnicsa/Documents/Durham University/Year 4/MATH4287 High Dimensional Stats/HDS/coursework/figures/hds_plots_1.png")
-
 knitr::include_graphics("C:/Usersnicsa/Documents/Durham University/Year 4/MATH4287 High Dimensional Stats/HDS/coursework/figures/hds_plots_7.png")
-
-knitr::include_graphics("C:/Usersnicsa/Documents/Durham University/Year 4/MATH4287 High Dimensional Stats/HDS/coursework/figures/hds_plots_8.png")
-knitr::include_graphics("C:/Usersnicsa/Documents/Durham University/Year 4/MATH4287 High Dimensional Stats/HDS/coursework/figures/hds_plots_13.png")
 knitr::include_graphics("C:/Usersnicsa/Documents/Durham University/Year 4/MATH4287 High Dimensional Stats/HDS/coursework/figures/hds_plots_10.png")
 knitr::include_graphics("C:/Usersnicsa/Documents/Durham University/Year 4/MATH4287 High Dimensional Stats/HDS/coursework/figures/hds_plots_11.png")
 knitr::include_graphics("C:/Usersnicsa/Documents/Durham University/Year 4/MATH4287 High Dimensional Stats/HDS/coursework/figures/hds_plots_16.png")
 knitr::include_graphics("C:/Usersnicsa/Documents/Durham University/Year 4/MATH4287 High Dimensional Stats/HDS/coursework/figures/hds_plots_22.png")
-knitr::include_graphics("C:/Usersnicsa/Documents/Durham University/Year 4/MATH4287 High Dimensional Stats/HDS/coursework/figures/hds_plots_23.png")
 knitr::include_graphics("C:/Usersnicsa/Documents/Durham University/Year 4/MATH4287 High Dimensional Stats/HDS/coursework/figures/hds_plots_54.png")
 knitr::include_graphics("C:/Usersnicsa/Documents/Durham University/Year 4/MATH4287 High Dimensional Stats/HDS/coursework/figures/hds_plots_66.png")
-knitr::include_graphics("C:/Usersnicsa/Documents/Durham University/Year 4/MATH4287 High Dimensional Stats/HDS/coursework/figures/hds_plots_67.png")
-knitr::include_graphics("C:/Usersnicsa/Documents/Durham University/Year 4/MATH4287 High Dimensional Stats/HDS/coursework/figures/hds_plots_68.png")
-knitr::include_graphics("C:/Usersnicsa/Documents/Durham University/Year 4/MATH4287 High Dimensional Stats/HDS/coursework/figures/hds_plots_69.png")
 ```
